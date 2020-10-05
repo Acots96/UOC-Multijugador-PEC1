@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace Complete
 {
@@ -59,8 +60,8 @@ namespace Complete
         private void Update ()
         {
             // Store the value of both input axes
-            m_MovementInputValue = Input.GetAxis (m_MovementAxisName);
-            m_TurnInputValue = Input.GetAxis (m_TurnAxisName);
+            ///m_MovementInputValue = Input.GetAxis (m_MovementAxisName);
+            ///m_TurnInputValue = Input.GetAxis (m_TurnAxisName);
 
             EngineAudio();
         }
@@ -122,6 +123,20 @@ namespace Complete
 
             // Apply this rotation to the rigidbody's rotation
             m_Rigidbody.MoveRotation (m_Rigidbody.rotation * turnRotation);
+        }
+
+
+
+        public void OnMove(InputAction.CallbackContext context) {
+            Vector2 v = context.ReadValue<Vector2>();
+            m_MovementInputValue = v.y;
+            m_TurnInputValue = v.x;
+        }
+
+        public void OnMoveCanceled(InputAction.CallbackContext context) {
+            Vector2 v = Vector2.zero;
+            m_MovementInputValue = v.y;
+            m_TurnInputValue = v.x;
         }
     }
 }

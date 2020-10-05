@@ -1,5 +1,6 @@
 ﻿using System;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace Complete
 {
@@ -24,7 +25,9 @@ namespace Complete
 
         [HideInInspector] public Camera camera;
 
-        private TankHealth health;
+        public PlayerInput playerInput;
+        public InputActionsManager inputActionsManager;
+        public GameManager gameManager;
 
 
         public void Setup ()
@@ -50,6 +53,16 @@ namespace Complete
                 // ... set their material color to the color specific to this tank
                 renderers[i].material.color = m_PlayerColor;
             }
+            
+            PlayerInput pi = playerInput.GetComponent<PlayerInput>();
+            InputActionsManager iam = inputActionsManager;
+            iam.Player.Move.performed += m_Movement.OnMove;
+            iam.Player.Move.canceled += m_Movement.OnMoveCanceled;
+            iam.Player.Fire.performed += m_Shooting.OnFire;
+            iam.Player.Fire.canceled += m_Shooting.OnFireCanceled;
+            iam.Player.AltFire.performed += m_Shooting.OnAltFire;
+            iam.Player.AltFire.canceled += m_Shooting.OnAltFireCanceled;
+            pi.actions = iam.asset;
         }
 
 

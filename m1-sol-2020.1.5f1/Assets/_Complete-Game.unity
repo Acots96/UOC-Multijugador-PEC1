@@ -1011,7 +1011,7 @@ MonoBehaviour:
   m_LookAt: {fileID: 235347951}
   m_Follow: {fileID: 235347951}
   m_Lens:
-    FieldOfView: 60
+    FieldOfView: 70
     OrthographicSize: 10
     NearClipPlane: 0.1
     FarClipPlane: 5000
@@ -1338,7 +1338,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1282556335}
   - component: {fileID: 1282556334}
-  - component: {fileID: 1282556333}
+  - component: {fileID: 1282556332}
   m_Layer: 0
   m_Name: EventSystem
   m_TagString: Untagged
@@ -1346,25 +1346,44 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1282556333
+--- !u!114 &1282556332
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1282556331}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4f231c4fb786f3946a6b90b886c48677, type: 3}
+  m_Script: {fileID: 11500000, guid: 01614664b831546d2ae94a42149d80ac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_HorizontalAxis: HorizontalUI
-  m_VerticalAxis: VerticalUI
-  m_SubmitButton: Submit
-  m_CancelButton: Cancel
-  m_InputActionsPerSecond: 10
-  m_RepeatDelay: 0.5
-  m_ForceModuleActive: 0
+  m_MoveRepeatDelay: 0.5
+  m_MoveRepeatRate: 0.1
+  m_ActionsAsset: {fileID: -944628639613478452, guid: ca9f5fa95ffab41fb9a615ab714db018,
+    type: 3}
+  m_PointAction: {fileID: 1054132383583890850, guid: ca9f5fa95ffab41fb9a615ab714db018,
+    type: 3}
+  m_MoveAction: {fileID: 3710738434707379630, guid: ca9f5fa95ffab41fb9a615ab714db018,
+    type: 3}
+  m_SubmitAction: {fileID: 2064916234097673511, guid: ca9f5fa95ffab41fb9a615ab714db018,
+    type: 3}
+  m_CancelAction: {fileID: -1967631576421560919, guid: ca9f5fa95ffab41fb9a615ab714db018,
+    type: 3}
+  m_LeftClickAction: {fileID: 8056856818456041789, guid: ca9f5fa95ffab41fb9a615ab714db018,
+    type: 3}
+  m_MiddleClickAction: {fileID: 3279352641294131588, guid: ca9f5fa95ffab41fb9a615ab714db018,
+    type: 3}
+  m_RightClickAction: {fileID: 3837173908680883260, guid: ca9f5fa95ffab41fb9a615ab714db018,
+    type: 3}
+  m_ScrollWheelAction: {fileID: 4502412055082496612, guid: ca9f5fa95ffab41fb9a615ab714db018,
+    type: 3}
+  m_TrackedDevicePositionAction: {fileID: 4754684134866288074, guid: ca9f5fa95ffab41fb9a615ab714db018,
+    type: 3}
+  m_TrackedDeviceOrientationAction: {fileID: 1025543830046995696, guid: ca9f5fa95ffab41fb9a615ab714db018,
+    type: 3}
+  m_DeselectOnBackgroundClick: 1
+  m_PointerBehavior: 0
 --- !u!114 &1282556334
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1447,7 +1466,7 @@ MonoBehaviour:
   m_LookAt: {fileID: 194018016}
   m_Follow: {fileID: 194018016}
   m_Lens:
-    FieldOfView: 60
+    FieldOfView: 70
     OrthographicSize: 10
     NearClipPlane: 0.1
     FarClipPlane: 5000
@@ -1492,11 +1511,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 54a000792783c934885973b761b3f96f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_NumRoundsToWin: 5
+  m_NumRoundsToWin: 2
   m_StartDelay: 3
   m_EndDelay: 3
   m_MessageText: {fileID: 102963701}
   m_TankPrefab: {fileID: 173472, guid: 756d3a6506f2f8241b4e8badde68567a, type: 3}
+  PlayerInputPrefab: {fileID: 5424795153992653333, guid: e77abd93d7b77184eb970f9e0dc9b841,
+    type: 3}
   m_Tanks:
   - m_PlayerColor: {r: 0.16470589, g: 0.39215687, b: 0.69803923, a: 0}
     m_SpawnPoint: {fileID: 194018016}
@@ -1505,6 +1526,8 @@ MonoBehaviour:
     m_Instance: {fileID: 0}
     m_Wins: 0
     camera: {fileID: 0}
+    playerInput: {fileID: 0}
+    gameManager: {fileID: 0}
   - m_PlayerColor: {r: 0.8980392, g: 0.18039216, b: 0.15686275, a: 0}
     m_SpawnPoint: {fileID: 2083660209}
     m_PlayerNumber: 2
@@ -1512,6 +1535,8 @@ MonoBehaviour:
     m_Instance: {fileID: 0}
     m_Wins: 0
     camera: {fileID: 0}
+    playerInput: {fileID: 0}
+    gameManager: {fileID: 0}
   - m_PlayerColor: {r: 0.16829611, g: 0.5943396, b: 0.14951935, a: 0}
     m_SpawnPoint: {fileID: 1086464326}
     m_PlayerNumber: 2
@@ -1519,6 +1544,8 @@ MonoBehaviour:
     m_Instance: {fileID: 0}
     m_Wins: 0
     camera: {fileID: 0}
+    playerInput: {fileID: 0}
+    gameManager: {fileID: 0}
   - m_PlayerColor: {r: 0.8980392, g: 0.15686274, b: 0.77978224, a: 0}
     m_SpawnPoint: {fileID: 235347951}
     m_PlayerNumber: 2
@@ -1526,12 +1553,17 @@ MonoBehaviour:
     m_Instance: {fileID: 0}
     m_Wins: 0
     camera: {fileID: 0}
+    playerInput: {fileID: 0}
+    gameManager: {fileID: 0}
   cameras:
   - {fileID: 1289558598}
   - {fileID: 1761233159}
   - {fileID: 1650710950}
   - {fileID: 876957882}
   miniMapCamera: {fileID: 688159177}
+  actions:
+  - {fileID: -944628639613478452, guid: d20efdaf2ec2a0244b3198571bbe8b4c, type: 3}
+  - {fileID: -944628639613478452, guid: 8227b850f14ec3b4f9a9a0fd1668f769, type: 3}
 --- !u!4 &1304999366
 Transform:
   m_ObjectHideFlags: 0
@@ -1842,7 +1874,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fa7155796051b734daa718462081dc5f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_BindingMode: 2
+  m_BindingMode: 4
   m_FollowOffset: {x: 0, y: 120, z: 100}
   m_XDamping: 0
   m_YDamping: 0
@@ -1917,7 +1949,7 @@ MonoBehaviour:
   m_LookAt: {fileID: 1086464326}
   m_Follow: {fileID: 1086464326}
   m_Lens:
-    FieldOfView: 60
+    FieldOfView: 70
     OrthographicSize: 10
     NearClipPlane: 0.1
     FarClipPlane: 5000
@@ -2045,7 +2077,7 @@ MonoBehaviour:
   m_LookAt: {fileID: 2083660209}
   m_Follow: {fileID: 2083660209}
   m_Lens:
-    FieldOfView: 60
+    FieldOfView: 70
     OrthographicSize: 10
     NearClipPlane: 0.1
     FarClipPlane: 5000

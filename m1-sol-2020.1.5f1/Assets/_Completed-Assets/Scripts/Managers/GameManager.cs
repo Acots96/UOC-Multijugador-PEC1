@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Users;
 
 namespace Complete
 {
@@ -13,10 +15,11 @@ namespace Complete
         public float m_EndDelay = 3f;               // The delay between the end of RoundPlaying and RoundEnding phases
         //public CameraControl m_CameraControl;       // Reference to the CameraControl script for control during different phases
         public Text m_MessageText;                  // Reference to the overlay Text to display winning text, etc.
-        public GameObject m_TankPrefab;             // Reference to the prefab the players will control
+        public GameObject m_TankPrefab, PlayerInputPrefab;             // Reference to the prefab the players will control
         public List<TankManager> m_Tanks;           // A collection of managers for enabling and disabling different aspects of the tanks
         public Cinemachine.CinemachineVirtualCamera[] cameras;
         public GameObject miniMapCamera;
+        public InputActionAsset[] actions;
 
 
         private int m_RoundNumber;                  // Which round the game is currently on
@@ -26,7 +29,11 @@ namespace Complete
         private TankManager m_GameWinner;           // Reference to the winner of the game.  Used to make an announcement of who won
 
         private List<TankManager> remainingTanks, deadTanks;
+        private List<PlayerInput> allPlayerInputs;
+        private List<InputActionsManager> allInputActions;
         private int activeCameras;
+        private bool gameStarted, canAddTank;
+        public string[] schemes { get; private set; }
 
 
         private void Start()
@@ -34,6 +41,9 @@ namespace Complete
             // Create the delays so they only have to be made once
             m_StartWait = new WaitForSeconds (m_StartDelay);
             m_EndWait = new WaitForSeconds (m_EndDelay);
+
+            schemes = new string[4] { "KeyboardArrowsShiftCtrl", "KeyboardWASDQE", "KeyboardNumpad", "KeyboardIJKLUO" };
+            gameStarted = canAddTank = false;
 
             SpawnAllTanks();
             ///SetCameraTargets();
@@ -60,20 +70,72 @@ namespace Complete
             // List to keep the dead tanks, so they can be easily reset after a round.
             deadTanks = new List<TankManager>();
 
+            allPlayerInputs = new List<PlayerInput>();
+            allInputActions = new List<InputActionsManager>();
+            //for (int i = 0; i < GetComponent<PlayerInputManager>().maxPlayerCount; i++) {
+            for (int i = 0; i < amount; i++) {
+                /*PlayerInput pi = PlayerInput.Instantiate(PlayerInputPrefab, i, schemes[i], i, Keyboard.current);
+                InputActionsManager iam = new InputActionsManager();
+                pi.actions = iam.asset;
+                pi.SwitchCurrentControlScheme(schemes[i], Keyboard.current);
+                allPlayerInputs.Add(pi);
+                allInputActions.Add(iam);*/
+            }
+
             for (int i = 0; i < m_Tanks.Count; i++) {
                 // ... create them, set their player number and references needed for control
-                SpawnTank(i);
+                SpawnTank(i, schemes[i]);
                 // Add the corresponging camera
                 AddCamera(i);
             }
+            
+            /*for (int i = 0; i < m_Tanks.Count; i++) {
+                PlayerInput pi = m_Tanks[i].m_Instance.GetComponent<PlayerInput>();
+                Debug.Log(pi.playerIndex);
+                PlayerInput.all[i].SwitchCurrentControlScheme(schemes[i], Keyboard.current);
+                PlayerInput.all[i].
+            }*/
+
             // Add the minimap camera depending on the situaction (controlled in the method)
             AddMiniMapCamera();
+
+            gameStarted = true;
+            PlayerInput piSpace = PlayerInput.Instantiate(PlayerInputPrefab, playerIndex: 4, controlScheme: "Keyboard&Mouse");
+            piSpace.name += " (AddPlayer)";
+            InputActionsManager iamSpace = new InputActionsManager();
+            iamSpace.Player.AddPlayer.performed += PlayerJoined;
+            piSpace.actions = iamSpace.asset;
+            piSpace.SwitchCurrentControlScheme("Keyboard&Mouse", Keyboard.current);
         }
-        private void SpawnTank(int i) {
-            m_Tanks[i].m_Instance =
-                    Instantiate(m_TankPrefab, m_Tanks[i].m_SpawnPoint.position, m_Tanks[i].m_SpawnPoint.rotation) as GameObject;
+
+        private void SpawnTank(int i, string scheme) {
+            PlayerInput pi = PlayerInput.Instantiate(PlayerInputPrefab, i, schemes[i], i, Keyboard.current);
+            InputActionsManager iam = new InputActionsManager();
+            pi.actions = iam.asset;
+            pi.SwitchCurrentControlScheme(schemes[i], Keyboard.current);
+            allPlayerInputs.Add(pi);
+            allInputActions.Add(iam);
+
+            GameObject tank = Instantiate(m_TankPrefab, m_Tanks[i].m_SpawnPoint.position, m_Tanks[i].m_SpawnPoint.rotation);
+            //pi.defaultControlScheme = scheme;
+            
+            //InputUser iu = InputUser.PerformPairingWithDevice(Keyboard.current);
+            //InputUser iu = pi.user;
+            //iu.AssociateActionsWithUser(actions);
+            //iu.ActivateControlScheme(scheme);
+            //pi.user.ActivateControlScheme(scheme);
+            //pi.SwitchCurrentControlScheme(scheme, Keyboard.current);
+
+            //m_Tanks[i].m_Instance =
+            //PlayerInput.Instantiate(m_TankPrefab, m_Tanks[i].m_SpawnPoint.position, m_Tanks[i].m_SpawnPoint.rotation) as GameObject;
+            m_Tanks[i].m_Instance = tank;
+            m_Tanks[i].m_Instance.name += " " + i;
             m_Tanks[i].m_PlayerNumber = i + 1;
+            m_Tanks[i].playerInput = allPlayerInputs[i];
+            m_Tanks[i].inputActionsManager = allInputActions[i];
+            m_Tanks[i].gameManager = this;
             m_Tanks[i].Setup();
+            m_Tanks[i].playerInput.GetComponent<PlayerInput>().SwitchCurrentControlScheme(scheme, Keyboard.current);
         }
 
         
@@ -91,7 +153,10 @@ namespace Complete
             // Horizontal size depending on the number of players (full width screen for 2 players, half width for 3 or more)
             Vector2 size = new Vector2(m_Tanks.Count == 2 ? 1 : 0.5f, 0.5f);
 
-            if (m_Tanks.Count == 2) {
+            if (m_Tanks.Count == 1) {
+                position = Vector2.zero;
+                size = Vector2.one;
+            } else if (m_Tanks.Count == 2) {
                 position = i == 0 ? Vector2.zero : Vector2.up / 2;
             } else {
                 switch (i) {
@@ -177,18 +242,20 @@ namespace Complete
 
             // Clear the text from the screen
             m_MessageText.text = string.Empty;
-            m_MessageText.text = "Añadir jugador: 'Espacio'";
+            if (remainingTanks.Count > 0)
+                m_MessageText.text = "Añadir jugador: 'Espacio'";
 
             // While there is not one tank left...
+            canAddTank = true;
             while (!OneTankLeft())
             {
-                UpdatePlayersAndScreen();
                 // Add new tank when Space button pressed (and less then 4 players active)
-                if (Input.GetButtonDown("Submit"))
-                    AddNewTank();
+                UpdatePlayersAndScreen();                
                 // ... return on the next frame
                 yield return null;
             }
+            canAddTank = false;
+            UpdatePlayersAndScreen();
         }
 
 
@@ -211,6 +278,7 @@ namespace Complete
             m_GameWinner = GetGameWinner();
 
             // Get a message based on the scores and whether or not there is a game winner and display it
+            m_MessageText.text = string.Empty;
             string message = EndMessage();
             m_MessageText.text = message;
 
@@ -308,6 +376,8 @@ namespace Complete
                 m_Tanks[i].Reset();
                 AddCamera(i);
             }
+            if (m_Tanks.Count == 4)
+                m_MessageText.text = string.Empty;
             AddMiniMapCamera();
         }
 
@@ -337,15 +407,16 @@ namespace Complete
 
             m_Tanks.Add(remainingTanks[0]);
             remainingTanks.RemoveAt(0);
-            SpawnTank(m_Tanks.Count - 1);
+            SpawnTank(m_Tanks.Count - 1, schemes[m_Tanks.Count - 1]);
 
             activeCameras = 0;
             for (int i = 0; i < m_Tanks.Count; i++)
                 AddCamera(i);
             AddMiniMapCamera();
 
-            if (m_Tanks.Count == 4)
-                m_MessageText.text = string.Empty;
+            m_MessageText.text = string.Empty;
+            if (remainingTanks.Count > 0)
+                m_MessageText.text = "Añadir jugador: 'Espacio'";
 
             //mainCam.gameObject.SetActive(false);
             ///SetCameraTargets();
@@ -382,6 +453,17 @@ namespace Complete
             for (int i = m_Tanks.Count; i < cameras.Length; i++)
                 cameras[i].transform.parent.gameObject.SetActive(false);
             AddMiniMapCamera();
+
+            m_MessageText.text = string.Empty;
+            if (remainingTanks.Count > 0)
+                m_MessageText.text = "Añadir jugador: 'Espacio'";
+        }
+
+
+
+        public void PlayerJoined(InputAction.CallbackContext context) {
+            if (canAddTank)
+                AddNewTank();
         }
     }
 }

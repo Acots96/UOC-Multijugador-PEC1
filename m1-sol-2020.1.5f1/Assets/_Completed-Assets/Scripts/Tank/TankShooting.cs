@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 namespace Complete
@@ -25,6 +26,8 @@ namespace Complete
         private bool m_Fired;                       // Whether or not the shell has been launched with this button press
 		private bool m_AltFire;                     // Whether or not the alternate shell has been launched with this button press
 
+        private bool fireStarted, altFireStarted, firePerformed, altFirePerformed, fireCanceled, altFireCanceled;
+
 
         private void OnEnable()
         {
@@ -49,22 +52,30 @@ namespace Complete
 		private bool FireButton (int mode) {
 
 			bool action = false;
-			m_AltFire = false;	
+			m_AltFire = false;
 
 			switch (mode) {
-			case 0:
-				action = Input.GetButtonDown (m_FireButton);
-				m_AltFire = Input.GetButtonDown (m_AltFireButton);					
-			break;
-			case 1:
-				action = Input.GetButton (m_FireButton);
-				m_AltFire = Input.GetButton (m_AltFireButton);
-			break;
-			case 2:
-				action = Input.GetButtonUp (m_FireButton);
-				m_AltFire = Input.GetButtonUp (m_AltFireButton);
-			break;
+			    case 0:
+                    if (fireStarted || altFireStarted) {
+                        action = fireStarted;
+                        m_AltFire = altFireStarted;
+                        fireStarted = altFireStarted = false;
+                    }
+			    break;
+			    case 1:
+				    action = firePerformed;
+				    m_AltFire = altFirePerformed;
+			    break;
+			    case 2:
+                    if (fireCanceled || altFireCanceled) {
+                        action = fireCanceled;
+                        m_AltFire = altFireCanceled;
+                        fireCanceled = altFireCanceled = false;
+                    }
+			    break;
 			}
+
+            //Debug.Log("FIREBUTTON: " + mode + " , " + action);
 
 			return action || m_AltFire;
 		}
@@ -133,6 +144,29 @@ namespace Complete
 
             // Reset the launch force.  This is a precaution in case of missing button events
             m_CurrentLaunchForce = m_MinLaunchForce;
+        }
+
+
+
+        public void OnFire(InputAction.CallbackContext context) {
+            firePerformed = true;
+            fireStarted = true;
+        }
+
+        public void OnFireCanceled(InputAction.CallbackContext context) {
+            firePerformed = false;
+            fireCanceled = true;
+        }
+
+
+        public void OnAltFire(InputAction.CallbackContext context) {
+            altFireStarted = true;
+            altFirePerformed = true;
+        }
+
+        public void OnAltFireCanceled(InputAction.CallbackContext context) {
+            altFirePerformed = false;
+            altFireCanceled = true;
         }
     }
 }
