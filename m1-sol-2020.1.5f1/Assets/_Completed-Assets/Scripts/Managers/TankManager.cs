@@ -23,8 +23,6 @@ namespace Complete
         private TankShooting m_Shooting;                        // Reference to tank's shooting script, used to disable and enable control
         private GameObject m_CanvasGameObject;                  // Used to disable the world space UI during the Starting and Ending phases of each round
 
-        [HideInInspector] public Camera camera;
-
         public PlayerInput playerInput;
         public InputActionsManager inputActionsManager;
         public GameManager gameManager;
@@ -53,15 +51,21 @@ namespace Complete
                 // ... set their material color to the color specific to this tank
                 renderers[i].material.color = m_PlayerColor;
             }
-            
+
+            // - PlayerInput receives the input;
+            // - TankMovement and TankShooting have the methods to control the tank;
+            // - And InputActionManager joins these methods with its corresponding input.
+            // So first it assigns all the tank actions to its corresponding method called by input
+            // and then it is assigned to the PlayerInput. 
+            // That way, this PlayerInput will know which method of which tank has to call.
             PlayerInput pi = playerInput.GetComponent<PlayerInput>();
             InputActionsManager iam = inputActionsManager;
-            iam.Player.Move.performed += m_Movement.OnMove;
-            iam.Player.Move.canceled += m_Movement.OnMoveCanceled;
-            iam.Player.Fire.performed += m_Shooting.OnFire;
-            iam.Player.Fire.canceled += m_Shooting.OnFireCanceled;
-            iam.Player.AltFire.performed += m_Shooting.OnAltFire;
-            iam.Player.AltFire.canceled += m_Shooting.OnAltFireCanceled;
+            iam.Player.Move.performed += m_Movement.OnTankMove;
+            iam.Player.Move.canceled += m_Movement.OnTankMoveCanceled;
+            iam.Player.Fire.performed += m_Shooting.OnTankFire;
+            iam.Player.Fire.canceled += m_Shooting.OnTankFireCanceled;
+            iam.Player.AltFire.performed += m_Shooting.OnTankAltFire;
+            iam.Player.AltFire.canceled += m_Shooting.OnTankAltFireCanceled;
             pi.actions = iam.asset;
         }
 

@@ -31,6 +31,8 @@ public class MenuManager : MonoBehaviour {
         if (gameStarted)
             return;
         firstSelected = button;
+        // Activates the text corresponding to the selected button
+        // and hids the next ones.
         HiddenTexts[firstSelected].SetActive(true);
         for (int i = firstSelected + 1; i < HiddenTexts.Length; i++)
             HiddenTexts[i].SetActive(false);

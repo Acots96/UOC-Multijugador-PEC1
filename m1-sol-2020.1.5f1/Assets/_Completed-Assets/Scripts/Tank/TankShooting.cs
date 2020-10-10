@@ -56,6 +56,7 @@ namespace Complete
 
 			switch (mode) {
 			    case 0:
+                    // Only for the first time, so they must be reset
                     if (fireStarted || altFireStarted) {
                         action = fireStarted;
                         m_AltFire = altFireStarted;
@@ -67,6 +68,7 @@ namespace Complete
 				    m_AltFire = altFirePerformed;
 			    break;
 			    case 2:
+                    // Only for the first time, so they must be reset
                     if (fireCanceled || altFireCanceled) {
                         action = fireCanceled;
                         m_AltFire = altFireCanceled;
@@ -74,8 +76,6 @@ namespace Complete
                     }
 			    break;
 			}
-
-            //Debug.Log("FIREBUTTON: " + mode + " , " + action);
 
 			return action || m_AltFire;
 		}
@@ -148,23 +148,30 @@ namespace Complete
 
 
 
-        public void OnFire(InputAction.CallbackContext context) {
+        /**
+         * The input system throws the event twice: started and performed, 
+         * so the "start" phase needs to be reset outside (FireButton(0)).
+         * The Canceled method is used to control the end of the action, also 
+         * with an outsider reset (FireButton(2)).
+         */
+
+        public void OnTankFire(InputAction.CallbackContext context) {
             firePerformed = true;
             fireStarted = true;
         }
 
-        public void OnFireCanceled(InputAction.CallbackContext context) {
+        public void OnTankFireCanceled(InputAction.CallbackContext context) {
             firePerformed = false;
             fireCanceled = true;
         }
 
 
-        public void OnAltFire(InputAction.CallbackContext context) {
+        public void OnTankAltFire(InputAction.CallbackContext context) {
             altFireStarted = true;
             altFirePerformed = true;
         }
 
-        public void OnAltFireCanceled(InputAction.CallbackContext context) {
+        public void OnTankAltFireCanceled(InputAction.CallbackContext context) {
             altFirePerformed = false;
             altFireCanceled = true;
         }

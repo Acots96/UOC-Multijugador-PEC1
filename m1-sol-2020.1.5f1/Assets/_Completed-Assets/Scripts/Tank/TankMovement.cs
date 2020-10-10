@@ -127,13 +127,13 @@ namespace Complete
 
 
 
-        public void OnMove(InputAction.CallbackContext context) {
+        public void OnTankMove(InputAction.CallbackContext context) {
             Vector2 v = context.ReadValue<Vector2>();
             m_MovementInputValue = v.y;
             m_TurnInputValue = v.x;
         }
 
-        public void OnMoveCanceled(InputAction.CallbackContext context) {
+        public void OnTankMoveCanceled(InputAction.CallbackContext context) {
             Vector2 v = Vector2.zero;
             m_MovementInputValue = v.y;
             m_TurnInputValue = v.x;

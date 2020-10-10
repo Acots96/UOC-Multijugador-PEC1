@@ -13,13 +13,14 @@ namespace Complete
         public int m_NumRoundsToWin = 5;            // The number of rounds a single player has to win to win the game
         public float m_StartDelay = 3f;             // The delay between the start of RoundStarting and RoundPlaying phases
         public float m_EndDelay = 3f;               // The delay between the end of RoundPlaying and RoundEnding phases
-        //public CameraControl m_CameraControl;       // Reference to the CameraControl script for control during different phases
         public Text m_MessageText;                  // Reference to the overlay Text to display winning text, etc.
-        public GameObject m_TankPrefab, PlayerInputPrefab;             // Reference to the prefab the players will control
+        public GameObject m_TankPrefab;             // Reference to the prefab the players will control
         public List<TankManager> m_Tanks;           // A collection of managers for enabling and disabling different aspects of the tanks
-        public Cinemachine.CinemachineVirtualCamera[] cameras;
-        public GameObject miniMapCamera;
-        public InputActionAsset[] actions;
+
+        public GameObject PlayerInputPrefab;                     // Reference to the prefab of the PlayerInput needed for each player.
+        public Cinemachine.CinemachineVirtualCamera[] cameras;   // Reference to the cameras used by players.
+        public GameObject miniMapCamera;                         // Reference to the minimap camera (GO instead of cinemachine because only needs to be enabled/disabled)
+        public InputActionAsset[] actions;                       // Actions for each player
 
 
         private int m_RoundNumber;                  // Which round the game is currently on
@@ -28,12 +29,11 @@ namespace Complete
         private TankManager m_RoundWinner;          // Reference to the winner of the current round.  Used to make an announcement of who won
         private TankManager m_GameWinner;           // Reference to the winner of the game.  Used to make an announcement of who won
 
-        private List<TankManager> remainingTanks, deadTanks;
-        private List<PlayerInput> allPlayerInputs;
-        private List<InputActionsManager> allInputActions;
-        private int activeCameras;
-        private bool gameStarted, canAddTank;
-        public string[] schemes { get; private set; }
+        private List<TankManager> remainingTanks;           // List containing the tanks that can be used by new players
+        private List<TankManager> deadTanks;                // List containing the dead players
+        private int activeCameras;                          // Number of active cameras at the same time
+        private bool canAddTank;                            // Bool used to allow new tanks only in game time
+        public string[] schemes { get; private set; }       // Schemes from the inputaction asset for all possible players
 
 
         private void Start()
@@ -42,11 +42,11 @@ namespace Complete
             m_StartWait = new WaitForSeconds (m_StartDelay);
             m_EndWait = new WaitForSeconds (m_EndDelay);
 
+            // Definition of all schemes
             schemes = new string[4] { "KeyboardArrowsShiftCtrl", "KeyboardWASDQE", "KeyboardNumpad", "KeyboardIJKLUO" };
-            gameStarted = canAddTank = false;
+            canAddTank = false;
 
             SpawnAllTanks();
-            ///SetCameraTargets();
 
             // Once the tanks have been created and the camera is using them as targets, start the game
             StartCoroutine (GameLoop());
@@ -57,49 +57,33 @@ namespace Complete
         private void SpawnAllTanks() {
             activeCameras = 0;
 
-            // For all the tanks...
-
             // Use of PlayerPrefs to get the amount of players selected from the Menu
             int amount = PlayerPrefs.GetInt("PlayersAmount", 2);
 
-            // Tanks that are not players (2 if there are 2 players, 1 if there are 3 players, empty if 4 players from the start)
+            // Tanks ready to be used by new players
+            // (2 if there are 2 players since the beginning, 1 if there are 3 players, empty if 4 players)
             remainingTanks = new List<TankManager>(m_Tanks.GetRange(amount, m_Tanks.Count - amount));
+
             // m_tanks will contain only the active players, remainingTanks will contain the rest
             m_Tanks.RemoveRange(amount, m_Tanks.Count - amount);
 
             // List to keep the dead tanks, so they can be easily reset after a round.
             deadTanks = new List<TankManager>();
 
-            allPlayerInputs = new List<PlayerInput>();
-            allInputActions = new List<InputActionsManager>();
-            //for (int i = 0; i < GetComponent<PlayerInputManager>().maxPlayerCount; i++) {
-            for (int i = 0; i < amount; i++) {
-                /*PlayerInput pi = PlayerInput.Instantiate(PlayerInputPrefab, i, schemes[i], i, Keyboard.current);
-                InputActionsManager iam = new InputActionsManager();
-                pi.actions = iam.asset;
-                pi.SwitchCurrentControlScheme(schemes[i], Keyboard.current);
-                allPlayerInputs.Add(pi);
-                allInputActions.Add(iam);*/
-            }
-
+            // For all the tanks...
             for (int i = 0; i < m_Tanks.Count; i++) {
                 // ... create them, set their player number and references needed for control
                 SpawnTank(i, schemes[i]);
                 // Add the corresponging camera
                 AddCamera(i);
             }
-            
-            /*for (int i = 0; i < m_Tanks.Count; i++) {
-                PlayerInput pi = m_Tanks[i].m_Instance.GetComponent<PlayerInput>();
-                Debug.Log(pi.playerIndex);
-                PlayerInput.all[i].SwitchCurrentControlScheme(schemes[i], Keyboard.current);
-                PlayerInput.all[i].
-            }*/
 
             // Add the minimap camera depending on the situaction (controlled in the method)
             AddMiniMapCamera();
 
-            gameStarted = true;
+            // To add new players to the game (max 4), another PlayerInput is spawned,
+            // which uses a different scheme than the ones used by the players as it was
+            // the 5th player, but only with one single key (Space) to spawn a new player.
             PlayerInput piSpace = PlayerInput.Instantiate(PlayerInputPrefab, playerIndex: 4, controlScheme: "Keyboard&Mouse");
             piSpace.name += " (AddPlayer)";
             InputActionsManager iamSpace = new InputActionsManager();
@@ -108,33 +92,27 @@ namespace Complete
             piSpace.SwitchCurrentControlScheme("Keyboard&Mouse", Keyboard.current);
         }
 
+
         private void SpawnTank(int i, string scheme) {
+            // Each player needs a PlayerInput instance with its prefab (PlayerInput and MultiplayerEventSystem components),
+            // its scheme (defined in the list depending on the index) 
+            // and the device, being the same for all players.
             PlayerInput pi = PlayerInput.Instantiate(PlayerInputPrefab, i, schemes[i], i, Keyboard.current);
+
+            // Each player also needs its inputaction asset object to define all the actions.
             InputActionsManager iam = new InputActionsManager();
             pi.actions = iam.asset;
             pi.SwitchCurrentControlScheme(schemes[i], Keyboard.current);
-            allPlayerInputs.Add(pi);
-            allInputActions.Add(iam);
 
+            // Second step is to instantiate the tank itself with all the information needed.
             GameObject tank = Instantiate(m_TankPrefab, m_Tanks[i].m_SpawnPoint.position, m_Tanks[i].m_SpawnPoint.rotation);
-            //pi.defaultControlScheme = scheme;
-            
-            //InputUser iu = InputUser.PerformPairingWithDevice(Keyboard.current);
-            //InputUser iu = pi.user;
-            //iu.AssociateActionsWithUser(actions);
-            //iu.ActivateControlScheme(scheme);
-            //pi.user.ActivateControlScheme(scheme);
-            //pi.SwitchCurrentControlScheme(scheme, Keyboard.current);
-
-            //m_Tanks[i].m_Instance =
-            //PlayerInput.Instantiate(m_TankPrefab, m_Tanks[i].m_SpawnPoint.position, m_Tanks[i].m_SpawnPoint.rotation) as GameObject;
             m_Tanks[i].m_Instance = tank;
             m_Tanks[i].m_Instance.name += " " + i;
             m_Tanks[i].m_PlayerNumber = i + 1;
-            m_Tanks[i].playerInput = allPlayerInputs[i];
-            m_Tanks[i].inputActionsManager = allInputActions[i];
+            m_Tanks[i].playerInput = pi;
+            m_Tanks[i].inputActionsManager = iam;
             m_Tanks[i].gameManager = this;
-            m_Tanks[i].Setup();
+            m_Tanks[i].Setup();  // Actions assigned here.
             m_Tanks[i].playerInput.GetComponent<PlayerInput>().SwitchCurrentControlScheme(scheme, Keyboard.current);
         }
 
@@ -144,6 +122,7 @@ namespace Complete
             Cinemachine.CinemachineVirtualCamera newCam = cameras[i];
             GameObject cam = newCam.transform.parent.gameObject;
             cam.SetActive(true);
+            // Updates these 2 necessary attributes
             newCam.Follow = m_Tanks[i].m_Instance.transform;
             newCam.LookAt = newCam.Follow;
 
@@ -153,7 +132,7 @@ namespace Complete
             // Horizontal size depending on the number of players (full width screen for 2 players, half width for 3 or more)
             Vector2 size = new Vector2(m_Tanks.Count == 2 ? 1 : 0.5f, 0.5f);
 
-            if (m_Tanks.Count == 1) {
+            if (m_Tanks.Count == 1) { // In case of a winner
                 position = Vector2.zero;
                 size = Vector2.one;
             } else if (m_Tanks.Count == 2) {
@@ -168,23 +147,6 @@ namespace Complete
                 position /= 2;
             }
             cam.GetComponent<Camera>().rect = new Rect(position, size);
-        }
-
-
-        private void SetCameraTargets()
-        {
-            // Create a collection of transforms the same size as the number of tanks
-            Transform[] targets = new Transform[m_Tanks.Count];
-
-            // For each of these transforms...
-            for (int i = 0; i < targets.Length; i++)
-            {
-                // ... set it to the appropriate tank transform
-                targets[i] = m_Tanks[i].m_Instance.transform;
-            }
-
-            // These are the targets the camera should follow
-            ///m_CameraControl.m_Targets = targets;
         }
 
 
@@ -249,7 +211,7 @@ namespace Complete
             canAddTank = true;
             while (!OneTankLeft())
             {
-                // Add new tank when Space button pressed (and less then 4 players active)
+                // Checks if any player has died to update the cameras
                 UpdatePlayersAndScreen();                
                 // ... return on the next frame
                 yield return null;
@@ -347,7 +309,7 @@ namespace Complete
             // Add some line breaks after the initial message
             message += "\n\n\n\n";
 
-            // Go through all the tanks (alive and dead) and add each of their scores to the message
+            // Go through all the tanks (alive and dead) and adds each of their scores to the message
             for (int i = 0; i < m_Tanks.Count; i++) {
                 message += m_Tanks[i].m_ColoredPlayerText + ": " + m_Tanks[i].m_Wins + " WINS\n";
             }
@@ -369,13 +331,16 @@ namespace Complete
         private void ResetAllTanks()
         {
             activeCameras = 0;
+
+            // All dead tanks back to live
             m_Tanks.AddRange(deadTanks);
             deadTanks.Clear();
-            for (int i = 0; i < m_Tanks.Count; i++)
-            {
+
+            for (int i = 0; i < m_Tanks.Count; i++) {
                 m_Tanks[i].Reset();
                 AddCamera(i);
             }
+
             if (m_Tanks.Count == 4)
                 m_MessageText.text = string.Empty;
             AddMiniMapCamera();
@@ -402,13 +367,16 @@ namespace Complete
 
         // Function used to add new tank to the game (updates the lists and the cameras on screen)
         private void AddNewTank() {
+            // Cannot add more if max players reached
             if (remainingTanks.Count == 0)
                 return;
 
+            // Get the next tank stored and spawns it
             m_Tanks.Add(remainingTanks[0]);
             remainingTanks.RemoveAt(0);
             SpawnTank(m_Tanks.Count - 1, schemes[m_Tanks.Count - 1]);
 
+            // Updates all the cameras according to the new ammount of tanks
             activeCameras = 0;
             for (int i = 0; i < m_Tanks.Count; i++)
                 AddCamera(i);
@@ -417,9 +385,6 @@ namespace Complete
             m_MessageText.text = string.Empty;
             if (remainingTanks.Count > 0)
                 m_MessageText.text = "Añadir jugador: 'Espacio'";
-
-            //mainCam.gameObject.SetActive(false);
-            ///SetCameraTargets();
         }
 
 
@@ -436,16 +401,19 @@ namespace Complete
 
         // Function used to check if any player is dead, to remove its camera
         private void UpdatePlayersAndScreen() {
+            // Find if anyone is dead and updates the lists.
             foreach (TankManager tank in m_Tanks)
                 if (!tank.m_Instance.activeSelf) {
                     m_Tanks.Remove(tank);
                     deadTanks.Add(tank);
                     break;
                 }
+
             // No need to update the cameras if there is the same amount of players than the cameras
             if (activeCameras == m_Tanks.Count)
                 return;
             activeCameras = 0;
+
             // Add cameras to all the tanks alive
             for (int i = 0; i < m_Tanks.Count; i++)
                 AddCamera(i);
@@ -461,6 +429,7 @@ namespace Complete
 
 
 
+        // Method called when Space pressed
         public void PlayerJoined(InputAction.CallbackContext context) {
             if (canAddTank)
                 AddNewTank();
