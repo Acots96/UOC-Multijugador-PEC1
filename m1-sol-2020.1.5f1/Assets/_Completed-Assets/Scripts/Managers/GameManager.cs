@@ -306,6 +306,12 @@ namespace Complete
                 message = m_RoundWinner.m_ColoredPlayerText + " WINS THE ROUND!";
             }
 
+            // If there is a game winner, change the entire message to reflect that
+            if (m_GameWinner != null)
+            {
+                message = m_GameWinner.m_ColoredPlayerText + " WINS THE GAME!";
+            }
+
             // Add some line breaks after the initial message
             message += "\n\n\n\n";
 
@@ -315,12 +321,6 @@ namespace Complete
             }
             for (int i = 0; i < deadTanks.Count; i++) {
                 message += deadTanks[i].m_ColoredPlayerText + ": " + deadTanks[i].m_Wins + " WINS\n";
-            }
-
-            // If there is a game winner, change the entire message to reflect that
-            if (m_GameWinner != null)
-            {
-                message = m_GameWinner.m_ColoredPlayerText + " WINS THE GAME!";
             }
 
             return message;
@@ -374,9 +374,11 @@ namespace Complete
             // Get the next tank stored and spawns it
             m_Tanks.Add(remainingTanks[0]);
             remainingTanks.RemoveAt(0);
-            SpawnTank(m_Tanks.Count - 1, schemes[m_Tanks.Count - 1]);
+            // scheme index = max players (4) - amount of tanks not used by players + 1 (the next one) - 1 (index is 0-3 in a list with 4 elements)
+            string scheme = schemes[(4 - remainingTanks.Count) - 1];
+            SpawnTank(m_Tanks.Count - 1, scheme);
 
-            // Updates all the cameras according to the new ammount of tanks
+            // Updates all the cameras according to the new amount of tanks
             activeCameras = 0;
             for (int i = 0; i < m_Tanks.Count; i++)
                 AddCamera(i);

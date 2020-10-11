@@ -93,8 +93,6 @@ namespace Complete
         // Used at the start of each round to put the tank into it's default state
         public void Reset()
         {
-            Debug.Log(m_Instance.transform.position);
-            Debug.Log(m_SpawnPoint);
             m_Instance.transform.position = m_SpawnPoint.position;
             m_Instance.transform.rotation = m_SpawnPoint.rotation;
 

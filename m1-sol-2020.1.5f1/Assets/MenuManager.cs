@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class MenuManager : MonoBehaviour {
 
@@ -18,7 +19,9 @@ public class MenuManager : MonoBehaviour {
     public void Awake() {
         firstSelected = 0;
         gameStarted = false;
-        HiddenTexts[firstSelected].SetActive(true);
+        EnableText(0, true);
+        EnableText(1, false);
+        EnableText(2, false);
     }
 
 
@@ -33,9 +36,20 @@ public class MenuManager : MonoBehaviour {
         firstSelected = button;
         // Activates the text corresponding to the selected button
         // and hids the next ones.
-        HiddenTexts[firstSelected].SetActive(true);
+        EnableText(firstSelected, true);
         for (int i = firstSelected + 1; i < HiddenTexts.Length; i++)
-            HiddenTexts[i].SetActive(false);
+            EnableText(i, false);
+    }
+
+    /**
+     * Method used to increase/decrease the alpha component
+     * of a text's color.
+     */
+    private void EnableText(int idx, bool enable) {
+        Text t = HiddenTexts[idx].GetComponent<Text>();
+        Color c = t.color;
+        c.a = enable ? 1 : 0.3f;
+        t.color = c;
     }
 
 
